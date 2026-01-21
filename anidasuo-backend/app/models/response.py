@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from typing import Optional
 
 class DetectionResponse(BaseModel):
-    obstacle:bool
-    type:Optional[str]
-    distance: Optional[str]
-    direction:Optional[str]
+    obstacle: bool
+    distance: Optional[float]
+    direction: Optional[str]

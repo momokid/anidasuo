@@ -4,14 +4,14 @@ from app.models.response import DetectionResponse
 
 router = APIRouter()
 
-@router.post("/detect/", response_model=DetectionResponse)
+@router.post("/detect/")
 async def detect(file: UploadFile=File(...)):
-    result = await process_frame(file)
+    return  await process_frame(file)
     #return result #result
 
-    return {
-        "obstacle": result['obstacle'],
-        "type":result['type'],
-        "distance": result['distance'],
-        "direction": result['direction']
-    }
+    # return {
+    #     "obstacle": result['obstacle'],
+    #     "type":result['type'],
+    #     "distance": result['distance'],
+    #     "direction": result['direction']
+    # }

@@ -1,6 +1,7 @@
 import cv2
 from fastapi import UploadFile
 import numpy as np
+from app.services.detector import detect_objects
 
 async def process_frame(image: UploadFile):
     #Read images bytes into memory
@@ -13,18 +14,17 @@ async def process_frame(image: UploadFile):
     if frame is None:
         return{
             "obstable":False,
-            "type":None,
             "distance":0.0,
             "direction":None,
         }
-    height, width, _ = frame.shape
 
     # Placehilder heuristis (will be replace with ML)
-    obstacle_detected = width*height>10000
+    detections = detect_objects(frame)
+
+    obstacle_detected = len(detections) > 0
 
     return {
-    "obstacle": obstacle_detected,
-    "type": "unknown",
-    "distance": "near" if obstacle_detected else "far",
-    "direction": "center"
+        "obstacle": obstacle_detected,
+        "distance": 1.2 if obstacle_detected else None,
+        "direction": "center" if obstacle_detected else None
 }
