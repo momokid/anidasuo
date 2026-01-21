@@ -1,10 +1,15 @@
 from fastapi import FastAPI
-from app.routes.detect import router as detect_router
+from fastapi.middleware.cors import CORSMiddleware
+from app.routes import detect  # or wherever detect router is
 
-app = FastAPI(title="Anidasuo Vis-App Background")
+app = FastAPI()
 
-app.include_router(detect_router)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],              # for development ONLY
+    allow_credentials=True,
+    allow_methods=["*"],              # IMPORTANT
+    allow_headers=["*"],              # IMPORTANT (fixes your issue)
+)
 
-@app.get("/")
-def root():
-    return {"status":"Anadasuo backend running"}
+app.include_router(detect.router)

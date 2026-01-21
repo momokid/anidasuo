@@ -2,9 +2,16 @@ from fastapi import APIRouter, UploadFile, File
 from app.services.vision import process_frame
 from app.models.response import DetectionResponse
 
-router = APIRouter(prefix="/detect", tags=["Detection"])
+router = APIRouter()
 
-@router.post("/", response_model=DetectionResponse)
-async def detect_obstacle(image: UploadFile=File(...)):
-    result = process_frame(image)
-    return result
+@router.post("/detect/", response_model=DetectionResponse)
+async def detect(file: UploadFile=File(...)):
+    result = await process_frame(file)
+    #return result #result
+
+    return {
+        "obstacle": result['obstacle'],
+        "type":result['type'],
+        "distance": result['distance'],
+        "direction": result['direction']
+    }

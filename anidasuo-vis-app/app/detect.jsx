@@ -6,6 +6,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { detectObstacle } from "../lib/detection";
 import { warnHaptics } from "../lib/haptics";
 import { speakDistance } from "../lib/tts";
+import { sendFrameToBackend } from "../lib/backend";
 
 export default function DetectScreen() {
   const { start } = useLocalSearchParams();
@@ -19,6 +20,7 @@ export default function DetectScreen() {
 
   const cameraRef = useRef(null);
   const lastAlertRef = useRef(0); //timer for TTS and haptics
+  const isSendingref = useRef(false);
 
   //set navigationActive to true
   useEffect(() => {
@@ -46,14 +48,18 @@ export default function DetectScreen() {
     captureIntervalRef.current = setInterval(async () => {
       if (!cameraRef.current || !cameraReady) return;
 
+
+      if(isSendingref.current) return;
+      isSendingref.current = true;
+
       try {
         const photo = await cameraRef.current.takePictureAsync({
           skipProcessing: true,
           shutterSound: false,
         });
 
-        const detectionResult = detectObstacle(photo); //pass captured frame to detection pipeline
-        if (detectionResult?.obstacleDetected) {
+       const detectionResult = await sendFrameToBackend(photo)
+        if (detectionResult?.obstacle) {
           const now = Date.now();
           if (now - lastAlertRef.current > 2000) {
             lastAlertRef.current = now; //limit alerts to 2s
@@ -67,9 +73,11 @@ export default function DetectScreen() {
 
         console.log("Detection result: ", detectionResult);
         console.log("Frame captured:", photo.uri);
-        photo = null;
+        // photo = null;
       } catch (error) {
         console.warn("Frame capture failed", error);
+      }finally{
+        isSendingref.current=false
       }
     }, 2000);
   };

@@ -1,9 +1,10 @@
 import cv2
+from fastapi import UploadFile
 import numpy as np
 
-def process_frame(image):
+async def process_frame(image: UploadFile):
     #Read images bytes into memory
-    image_bytes = image.bytes.read()
+    image_bytes = await image.read()
 
     # Decode image using OpenCV
     np_img = np.frombuffer(image_bytes, np.uint8)
@@ -13,7 +14,7 @@ def process_frame(image):
         return{
             "obstable":False,
             "type":None,
-            "distance":None,
+            "distance":0.0,
             "direction":None,
         }
     height, width, _ = frame.shape
@@ -22,8 +23,8 @@ def process_frame(image):
     obstacle_detected = width*height>10000
 
     return {
-        "obstacle": obstacle_detected,
-        "type":"unknown",
-        "distance":"near" if obstacle_detected else "far",
-        "direction": "center"
-    }
+    "obstacle": obstacle_detected,
+    "type": "unknown",
+    "distance": "near" if obstacle_detected else "far",
+    "direction": "center"
+}
