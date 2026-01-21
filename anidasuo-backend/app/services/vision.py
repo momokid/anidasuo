@@ -12,7 +12,9 @@ def analyze_detections(detections, frame_width):
     if not detections:
         return {
             "obstacle": False,
+            "object": None,
             "distance": None,
+            "distance_label": None,
             "direction": None
         }
 
@@ -24,18 +26,22 @@ def analyze_detections(detections, frame_width):
 
     obj = detections[0]
     x1, y1, x2, y2 = obj["box"]
+    label = obj["class_name"]
 
     box_width = x2 - x1
     box_height = y2 - y1
     box_area = box_width * box_height
 
     # -------- Distance heuristic --------
-    if box_area > 60000:
-        distance = 0.5   # very close (meters – heuristic)
-    elif box_area > 30000:
-        distance = 1.2   # close
+    if box_area > 80000:
+        distance = 0.4
+        distance_label="very close"   
+    elif box_area > 40000:
+        distance = 1.2   
+        distance_label="close"
     else:
-        distance = 3.0   # far
+        distance = 2.5   
+        distance_label="far"
 
     # -------- Direction heuristic --------
     center_x = (x1 + x2) / 2
@@ -50,9 +56,12 @@ def analyze_detections(detections, frame_width):
 
     return {
         "obstacle": True,
+        "object":label,
         "distance": float(distance),
-        "direction": direction
+        "distance_label": distance_label,
+        "direction": direction,
     }
+
 
 
 async def process_frame(image: UploadFile):
@@ -70,7 +79,9 @@ async def process_frame(image: UploadFile):
     if frame is None:
         return {
             "obstacle": False,
+            "object": None,
             "distance": None,
+            "distance_label": None,
             "direction": None
         }
 

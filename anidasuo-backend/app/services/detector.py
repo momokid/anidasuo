@@ -3,7 +3,7 @@ import cv2
 MODEL_PATH = "app/models/ml/MobileNetSSD_deploy.caffemodel"
 CONFIG_PATH = "app/models/ml/MobileNetSSD_deploy.prototxt"
 
-CLASSES=[
+RELEVANT_CLASSES=[
     "background", "aeroplane", "bicycle", "bird", "boat",
     "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
     "dog", "horse", "motorbike", "person", "pottedplant",
@@ -32,13 +32,17 @@ def detect_objects(frame, confidence_threshold=0.5):
 
         if confidence > confidence_threshold:
             class_id=int(detections[0,0,i,1])
-            label = CLASSES[class_id]
+            label = RELEVANT_CLASSES[class_id]
+
+            if label not in RELEVANT_CLASSES:
+                continue
 
             box=detections[0,0,i,3:7] * [w,h,w,h]
             (x1, y1, x2, y2) = box.astype("int")
 
             results.append({
                 "class_id":class_id,
+                "class_name":RELEVANT_CLASSES[class_id],
                 "confidence":confidence,
                 "box":[x1,y1,x2,y2]
             })

@@ -14,20 +14,7 @@ export async function speak(text) {
   });
 }
 
-export function speakDistance(distance, direction = "center") {
-  let message = "Obstacle ahead";
-
-  if (distance === "near") {
-    message = "Obstacle is very close";
-  } else if (distance === "medium") {
-    message = "Obstacle is about two metres ahead";
-  } else if (distance === "far") {
-    message = "Obstacle is far ahead";
-  }
-
-  if (direction !== "center") {
-    message += ` on your ${direction}`;
-  }
-
-  speak(message); //spoken distance-aware feedback
+export function speakDistance(message) {
+  if (!message) return;
+  speak(message);
 }

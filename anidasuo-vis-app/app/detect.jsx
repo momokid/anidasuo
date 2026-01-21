@@ -61,13 +61,23 @@ export default function DetectScreen() {
        const detectionResult = await sendFrameToBackend(photo)
         if (detectionResult?.obstacle) {
           const now = Date.now();
+
           if (now - lastAlertRef.current > 2000) {
             lastAlertRef.current = now; //limit alerts to 2s
             warnHaptics();
           }
 
           setTimeout(() => {
-            speakDistance(detectionResult.distance, detectionResult.direction);
+            const { object, direction, distance_label } = detectionResult;
+
+            if (!object || !distance_label) return;
+
+            const message =
+              direction && direction !== "center"
+                ? `${object} on your ${direction}, ${distance_label}`
+                : `${object} ahead, ${distance_label}`;
+
+            speakDistance(message);   
           }, 500);
         }
 
