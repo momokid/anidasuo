@@ -25,9 +25,11 @@ def analyze_detections(detections, frame_width):
 
     # Pick the closest object (largest bounding box)
     detections.sort(
-        key=lambda d: (d["box"][2] - d["box"][0]) * (d["box"][3] - d["box"][1]),
-        reverse=True
+    key=lambda d: (
+        d["priority"],  # 1️⃣ most important
+        -((d["box"][2] - d["box"][0]) * (d["box"][3] - d["box"][1]))  # 2️⃣ closest
     )
+)
 
     obj = detections[0]
     x1, y1, x2, y2 = obj["box"]

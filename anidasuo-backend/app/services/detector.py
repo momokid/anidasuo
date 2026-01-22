@@ -10,6 +10,19 @@ RELEVANT_CLASSES=[
     "sheep", "sofa", "train", "tv monitor","electric fan"
 ]
 
+OBJECT_PRIORITY = {
+    "person": 1,
+    "car": 2,
+    "bus": 2,
+    "motorbike": 2,
+    "bicycle": 2,
+    "dog": 3,
+    "cat": 3,
+    "chair": 4,
+    "sofa": 4,
+    "table": 4,
+}
+
 net = cv2.dnn.readNetFromCaffe(CONFIG_PATH, MODEL_PATH)
 
 def detect_objects(frame, confidence_threshold=0.5):
@@ -31,8 +44,10 @@ def detect_objects(frame, confidence_threshold=0.5):
         confidence = float(detections[0,0,i,2])
 
         if confidence > confidence_threshold:
+
             class_id=int(detections[0,0,i,1])
             label = RELEVANT_CLASSES[class_id]
+            priority = OBJECT_PRIORITY.get(label, 99)
 
             if label not in RELEVANT_CLASSES:
                 continue
@@ -43,6 +58,7 @@ def detect_objects(frame, confidence_threshold=0.5):
             results.append({
                 "class_id":class_id,
                 "class_name":RELEVANT_CLASSES[class_id],
+                "priority":priority,
                 "confidence":confidence,
                 "box":[x1,y1,x2,y2]
             })
