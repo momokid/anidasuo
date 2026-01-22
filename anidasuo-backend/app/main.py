@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import detect  # or wherever detect router is
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 app = FastAPI()
 

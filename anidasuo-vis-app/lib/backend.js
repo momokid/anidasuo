@@ -17,7 +17,8 @@ export async function sendFrameToBackend(photo) {
   }
 
   try {
-    const response = await fetch("http://10.102.251.123:8000/detect/", {
+    const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+    const response = await fetch(`${API_BASE_URL}/detect/`, {
       method: "POST",
       body: formData,
     });
