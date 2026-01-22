@@ -5,9 +5,9 @@ CONFIG_PATH = "app/models/ml/MobileNetSSD_deploy.prototxt"
 
 RELEVANT_CLASSES=[
     "background", "aeroplane", "bicycle", "bird", "boat",
-    "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
-    "dog", "horse", "motorbike", "person", "pottedplant",
-    "sheep", "sofa", "train", "tvmonitor"
+    "bottle", "bus", "car", "cat", "chair", "cow", "dining table",
+    "dog", "horse", "motorbike", "person", "potted plant",
+    "sheep", "sofa", "train", "tv monitor","electric fan"
 ]
 
 net = cv2.dnn.readNetFromCaffe(CONFIG_PATH, MODEL_PATH)

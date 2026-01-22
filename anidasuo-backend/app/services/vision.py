@@ -2,7 +2,12 @@ import cv2
 import numpy as np
 from fastapi import UploadFile
 from app.services.detector import detect_objects
+from collections import deque
 
+# Keep last 5 frames
+DETECTION_HISTORY = deque(maxlen=5)
+
+CONFIRMATION_THRESHOLD = 3 # must appear in 3 of last 5 frames 
 
 def analyze_detections(detections, frame_width):
     """
@@ -88,6 +93,19 @@ async def process_frame(image: UploadFile):
     # Run object detection
     detections = detect_objects(frame)
 
+    has_object = len(detections) > 0
+    DETECTION_HISTORY.append(has_object)
+
+    confirmed = sum(DETECTION_HISTORY) >= CONFIRMATION_THRESHOLD
+
+    if not confirmed:
+        return {
+            "obstacle": False,
+            "object": None,
+            "distance": None,
+            "distance_label": None,
+            "direction": None 
+        }
     # Analyze detections
     result = analyze_detections(detections, frame.shape[1])
 
