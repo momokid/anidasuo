@@ -9,6 +9,24 @@ DETECTION_HISTORY = deque(maxlen=5)
 
 CONFIRMATION_THRESHOLD = 3 # must appear in 3 of last 5 frames 
 
+def confirmed_detection():
+    labels = []
+
+    for frame in DETECTION_HISTORY:
+        if frame:
+            labels.append(frame[0]['class_name'])
+
+    if not labels:
+        return False, None
+
+    most_common = max(set(labels),key =labels.count)
+
+    if labels.count(most_common) >= CONFIRMATION_THRESHOLD:
+        return True, most_common
+        
+
+    return False, None
+
 def analyze_detections(detections, frame_width):
     """
     Convert raw detections into obstacle, distance, and direction
@@ -25,11 +43,11 @@ def analyze_detections(detections, frame_width):
 
     # Pick the closest object (largest bounding box)
     detections.sort(
-    key=lambda d: (
-        d["priority"],  # 1️⃣ most important
-        -((d["box"][2] - d["box"][0]) * (d["box"][3] - d["box"][1]))  # 2️⃣ closest
+        key=lambda d: (
+            d["priority"],  # 1️⃣ most important
+            -((d["box"][2] - d["box"][0]) * (d["box"][3] - d["box"][1]))  # 2️⃣ closest
+        )
     )
-)
 
     obj = detections[0]
     x1, y1, x2, y2 = obj["box"]
@@ -95,10 +113,13 @@ async def process_frame(image: UploadFile):
     # Run object detection
     detections = detect_objects(frame)
 
-    has_object = len(detections) > 0
-    DETECTION_HISTORY.append(has_object)
+    DETECTION_HISTORY.append(detections)
 
-    confirmed = sum(DETECTION_HISTORY) >= CONFIRMATION_THRESHOLD
+    confirmed, confirmed_label = confirmed_detection()
+
+    #    has_object = len(detections) > 0
+    # DETECTION_HISTORY.append(has_object)
+    # confirmed = sum(DETECTION_HISTORY) >= CONFIRMATION_THRESHOLD
 
     if not confirmed:
         return {
@@ -108,6 +129,20 @@ async def process_frame(image: UploadFile):
             "distance_label": None,
             "direction": None 
         }
+    
+    filtered = [
+        d for d in detections if d['class_name'] == confirmed_label
+    ]
+
+    if not filtered:
+        return {
+            "obstacle": False,
+            "object": None,
+            "distance": None,
+            "distance_label": None,
+            "direction": None 
+        }
+
     # Analyze detections
     result = analyze_detections(detections, frame.shape[1])
 
