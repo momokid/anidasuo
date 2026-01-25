@@ -4,48 +4,43 @@ from fastapi import UploadFile
 from app.services.detector import detect_objects
 from collections import deque
 
-# Keep last 5 frames
-DETECTION_HISTORY = deque(maxlen=5)
+# --- Histories ---
+LABEL_HISTORY = deque(maxlen=4)
+DISTANCE_HISTORY = deque(maxlen=4)
+DIRECTION_HISTORY = deque(maxlen=4)
 
-CONFIRMATION_THRESHOLD = 3 # must appear in 3 of last 5 frames 
+CONFIRMATION_THRESHOLD = 2
 
+
+def empty_result():
+    return {
+        "obstacle": False,
+        "object": None,
+        "distance": None,
+        "distance_label": None,
+        "direction": None,
+    }
+
+
+# --- Confirmation logic ---
 def confirmed_detection():
-    labels = []
-
-    for frame in DETECTION_HISTORY:
-        if frame:
-            labels.append(frame[0]['class_name'])
-
-    if not labels:
+    if not LABEL_HISTORY:
         return False, None
 
-    most_common = max(set(labels),key =labels.count)
+    most_common = max(set(LABEL_HISTORY), key=LABEL_HISTORY.count)
 
-    if labels.count(most_common) >= CONFIRMATION_THRESHOLD:
+    if LABEL_HISTORY.count(most_common) >= CONFIRMATION_THRESHOLD:
         return True, most_common
-        
 
     return False, None
 
+
+# --- Analyze detections ---
 def analyze_detections(detections, frame_width):
-    """
-    Convert raw detections into obstacle, distance, and direction
-    """
-
-    if not detections:
-        return {
-            "obstacle": False,
-            "object": None,
-            "distance": None,
-            "distance_label": None,
-            "direction": None
-        }
-
-    # Pick the closest object (largest bounding box)
     detections.sort(
         key=lambda d: (
-            d["priority"],  # 1️⃣ most important
-            -((d["box"][2] - d["box"][0]) * (d["box"][3] - d["box"][1]))  # 2️⃣ closest
+            d["priority"],
+            -((d["box"][2] - d["box"][0]) * (d["box"][3] - d["box"][1]))
         )
     )
 
@@ -53,22 +48,15 @@ def analyze_detections(detections, frame_width):
     x1, y1, x2, y2 = obj["box"]
     label = obj["class_name"]
 
-    box_width = x2 - x1
-    box_height = y2 - y1
-    box_area = box_width * box_height
+    box_area = (x2 - x1) * (y2 - y1)
 
-    # -------- Distance heuristic --------
     if box_area > 80000:
-        distance = 0.4
-        distance_label="very close"   
+        distance, distance_label = 0.4, "very close"
     elif box_area > 40000:
-        distance = 1.2   
-        distance_label="close"
+        distance, distance_label = 1.2, "close"
     else:
-        distance = 2.5   
-        distance_label="far"
+        distance, distance_label = 2.5, "far"
 
-    # -------- Direction heuristic --------
     center_x = (x1 + x2) / 2
     frame_center = frame_width / 2
 
@@ -79,71 +67,54 @@ def analyze_detections(detections, frame_width):
     else:
         direction = "center"
 
-    return {
-        "obstacle": True,
-        "object":label,
-        "distance": float(distance),
-        "distance_label": distance_label,
-        "direction": direction,
-    }
+    return label, distance, distance_label, direction
 
 
+# --- Smoothing ---
+def smooth_distance():
+    return round(sum(DISTANCE_HISTORY) / len(DISTANCE_HISTORY), 2)
 
+
+def smooth_direction():
+    return max(set(DIRECTION_HISTORY), key=DIRECTION_HISTORY.count)
+
+
+# --- Main pipeline ---
 async def process_frame(image: UploadFile):
-    """
-    Main vision pipeline
-    """
-
-    # Read image bytes
     image_bytes = await image.read()
     np_img = np.frombuffer(image_bytes, np.uint8)
-
-    # Decode image
     frame = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
 
     if frame is None:
-        return {
-            "obstacle": False,
-            "object": None,
-            "distance": None,
-            "distance_label": None,
-            "direction": None
-        }
+        return empty_result()
 
-    # Run object detection
     detections = detect_objects(frame)
+    print("RAW DETECTIONS:", detections)
 
-    DETECTION_HISTORY.append(detections)
+    if not detections:
+        return empty_result()
 
-    confirmed, confirmed_label = confirmed_detection()
+    LABEL_HISTORY.append(detections[0]["class_name"])
 
-    #    has_object = len(detections) > 0
-    # DETECTION_HISTORY.append(has_object)
-    # confirmed = sum(DETECTION_HISTORY) >= CONFIRMATION_THRESHOLD
-
+    confirmed, label = confirmed_detection()
     if not confirmed:
-        return {
-            "obstacle": False,
-            "object": None,
-            "distance": None,
-            "distance_label": None,
-            "direction": None 
-        }
-    
-    filtered = [
-        d for d in detections if d['class_name'] == confirmed_label
-    ]
+        return empty_result()
 
+    filtered = [d for d in detections if d["class_name"] == label]
     if not filtered:
-        return {
-            "obstacle": False,
-            "object": None,
-            "distance": None,
-            "distance_label": None,
-            "direction": None 
-        }
+        return empty_result()
 
-    # Analyze detections
-    result = analyze_detections(detections, frame.shape[1])
+    label, distance, distance_label, direction = analyze_detections(
+        filtered, frame.shape[1]
+    )
 
-    return result
+    DISTANCE_HISTORY.append(distance)
+    DIRECTION_HISTORY.append(direction)
+
+    return {
+        "obstacle": True,
+        "object": label,
+        "distance": smooth_distance(),
+        "distance_label": distance_label,
+        "direction": smooth_direction(),
+    }

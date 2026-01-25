@@ -14,7 +14,21 @@ export async function speak(text) {
   });
 }
 
-export function speakDistance(message) {
-  if (!message) return;
+export function speakDistance(object, direction, distance_label) {
+  // if (!message) return;
+  // speak(message);
+
+  if (!object) return;
+
+  let message = `${object} ahead`;
+
+  if (distance_label) {
+    message += `, ${distance_label}`;
+  }
+
+  if (direction && direction !== "center") {
+    message += `${object} on your ${direction}`;
+  }
+
   speak(message);
 }

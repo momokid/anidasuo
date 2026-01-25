@@ -55,6 +55,7 @@ export default function DetectScreen() {
 
       try {
         const photo = await cameraRef.current.takePictureAsync({
+          quality:0.3,
           skipProcessing: true,
           shutterSound: false,
         });
@@ -84,17 +85,32 @@ export default function DetectScreen() {
         // }
 
         if (detectionResult?.obstacle) {
-        const message = `${detectionResult.object} on your ${detectionResult.direction}, ${detectionResult.distance_label}`;
+        //const message = `${detectionResult.object} on your ${detectionResult.direction}, ${detectionResult.distance_label}`;
+          const now = Date.now();
 
-        if (message !== lastSpokenRef.current) {
-          lastSpokenRef.current = message;
+          if(now - lastAlertRef.current >3000){
+            lastAlertRef.current = now; //limit alerts to 3s
 
-          warnHaptics();
+            speakDistance(
+              detectionResult.object,
+              detectionResult.direction,
+              detectionResult.distance_label
+            )
 
-          setTimeout(() => {
-            speakDistance(message);
-          }, 400);
-        }
+            warnHaptics();
+
+          }
+          
+        // if (message !== lastSpokenRef.current) {
+        //   lastSpokenRef.current = message;
+
+        //   warnHaptics();
+
+        //   setTimeout(() => {
+        //     speakDistance(message);
+        //   }, 400);
+        // }
+        
       }
 
         console.log("Detection result: ", detectionResult);

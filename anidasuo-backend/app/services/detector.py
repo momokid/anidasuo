@@ -25,7 +25,7 @@ OBJECT_PRIORITY = {
 
 net = cv2.dnn.readNetFromCaffe(CONFIG_PATH, MODEL_PATH)
 
-def detect_objects(frame, confidence_threshold=0.5):
+def detect_objects(frame, confidence_threshold=0.4):
     h, w = frame.shape[:2]
 
     blob = cv2.dnn.blobFromImage(
