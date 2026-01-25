@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from fastapi import UploadFile
-from app.services.detector import detect_objects
+from app.services.yolo_detector import detect_objects
 from collections import deque
 
 # --- Histories ---
@@ -10,6 +10,21 @@ DISTANCE_HISTORY = deque(maxlen=4)
 DIRECTION_HISTORY = deque(maxlen=4)
 
 CONFIRMATION_THRESHOLD = 2
+
+OBJECT_PRIORITY = {
+    "person": 1,
+    "car": 2,
+    "bus": 2,
+    "truck": 2,
+    "motorcycle": 2,
+    "bicycle": 2,
+    "dog": 3,
+    "cat": 3,
+    "chair": 4,
+    "sofa": 4,
+    "table": 4,
+    "vase": 4,
+}
 
 
 def empty_result():
@@ -37,6 +52,14 @@ def confirmed_detection():
 
 # --- Analyze detections ---
 def analyze_detections(detections, frame_width):
+
+    if not detections:
+        return empty_result()
+    
+    # Inject priority safely
+    for d in detections:
+        d["priority"] = OBJECT_PRIORITY.get(d["class_name"], 99)
+
     detections.sort(
         key=lambda d: (
             d["priority"],
@@ -77,7 +100,6 @@ def smooth_distance():
 
 def smooth_direction():
     return max(set(DIRECTION_HISTORY), key=DIRECTION_HISTORY.count)
-
 
 # --- Main pipeline ---
 async def process_frame(image: UploadFile):
