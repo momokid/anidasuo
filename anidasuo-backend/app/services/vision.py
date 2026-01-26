@@ -4,7 +4,6 @@ from fastapi import UploadFile
 from app.services.yolo_detector import detect_objects
 from collections import deque
 
-# --- Histories ---
 LABEL_HISTORY = deque(maxlen=4)
 DISTANCE_HISTORY = deque(maxlen=4)
 DIRECTION_HISTORY = deque(maxlen=4)
@@ -101,6 +100,10 @@ def smooth_distance():
 def smooth_direction():
     return max(set(DIRECTION_HISTORY), key=DIRECTION_HISTORY.count)
 
+
+def filter_obstacles():
+    return "pass" \
+    ""
 # --- Main pipeline ---
 async def process_frame(image: UploadFile):
     image_bytes = await image.read()

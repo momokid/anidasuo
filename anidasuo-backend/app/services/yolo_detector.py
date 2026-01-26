@@ -1,16 +1,9 @@
-# app/services/yolo_detector.py
-
 from ultralytics import YOLO
 import cv2
 
-# -------------------------------
 # Load YOLOv8 Nano (lightweight)
-# -------------------------------
 model = YOLO("yolov8n.pt")  # auto-downloads if missing
 
-# -------------------------------
-# Confidence threshold
-# -------------------------------
 CONF_THRESHOLD = 0.35
 
 # -------------------------------
